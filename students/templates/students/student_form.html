@@ -1,0 +1,219 @@
+{% extends "students/base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h2 style="margin:0; font-family: Georgia, 'Palatino Linotype', serif;">{{ title }}</h2>
+        <a class="btn btn-ghost" href="{% url 'students_web:student-list' %}">Back to List</a>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="grid">
+            <div class="form-row">
+                <label for="{{ form.full_name.id_for_label }}">{{ form.full_name.label }}</label>
+                {{ form.full_name }}
+                {{ form.full_name.errors }}
+            </div>
+
+            <div class="form-row">
+                <label for="{{ form.student_id_number.id_for_label }}">{{ form.student_id_number.label }}</label>
+                {{ form.student_id_number }}
+                {{ form.student_id_number.errors }}
+            </div>
+
+            <div class="form-row">
+                <label for="{{ form.guardian_name.id_for_label }}">{{ form.guardian_name.label }}</label>
+                {{ form.guardian_name }}
+                {{ form.guardian_name.errors }}
+            </div>
+
+            <div class="form-row">
+                <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                {{ form.email }}
+                {{ form.email.errors }}
+            </div>
+
+            <div class="form-row">
+                <label for="{{ form.phone_number.id_for_label }}">{{ form.phone_number.label }}</label>
+                {{ form.phone_number }}
+                {{ form.phone_number.errors }}
+            </div>
+
+            <div class="form-row">
+                <label for="{{ form.guardian_phone_number.id_for_label }}">{{ form.guardian_phone_number.label }}</label>
+                {{ form.guardian_phone_number }}
+                {{ form.guardian_phone_number.errors }}
+            </div>
+
+            <div class="form-row">
+                <label for="{{ form.emergency_contact_number.id_for_label }}">{{ form.emergency_contact_number.label }}</label>
+                {{ form.emergency_contact_number }}
+                {{ form.emergency_contact_number.errors }}
+            </div>
+
+            <div class="form-row">
+                <label for="{{ form.year_of_enrollment.id_for_label }}">{{ form.year_of_enrollment.label }}</label>
+                {{ form.year_of_enrollment }}
+                {{ form.year_of_enrollment.errors }}
+            </div>
+
+            <div class="form-row">
+                <label for="{{ form.faculty.id_for_label }}">{{ form.faculty.label }}</label>
+                {{ form.faculty }}
+                {{ form.faculty.errors }}
+            </div>
+
+            <div class="form-row">
+                <label for="{{ form.academic_year.id_for_label }}">{{ form.academic_year.label }}</label>
+                {{ form.academic_year }}
+                {{ form.academic_year.errors }}
+            </div>
+
+            <div class="form-row">
+                <label for="{{ form.profile_image.id_for_label }}">{{ form.profile_image.label }}</label>
+                {{ form.profile_image }}
+                {{ form.profile_image.errors }}
+            </div>
+
+            <div class="form-row" style="grid-column: span 2;">
+                <label for="course-search">Type To Find Courses</label>
+                <input id="course-search" type="text" placeholder="Type course code or name and click a suggestion..." autocomplete="off" />
+                <div id="course-suggestions" class="course-suggestions"></div>
+                <div id="selected-courses" class="selected-courses"></div>
+                <label for="{{ form.courses.id_for_label }}" style="margin-top:8px;">{{ form.courses.label }}</label>
+                <div style="display:none;">
+                    {{ form.courses }}
+                </div>
+                {{ form.courses.errors }}
+            </div>
+        </div>
+
+        <div style="margin-top:18px; display:flex; gap:10px;">
+            <button class="btn btn-primary" type="submit">{{ submit_label }}</button>
+            <a class="btn btn-ghost" href="{% url 'students_web:student-list' %}">Cancel</a>
+        </div>
+    </form>
+
+    <script>
+        (function () {
+            var searchInput = document.getElementById("course-search");
+            var select = document.getElementById("id_courses");
+            var suggestionsBox = document.getElementById("course-suggestions");
+            var selectedBox = document.getElementById("selected-courses");
+            if (!searchInput || !select) {
+                return;
+            }
+
+            function getSelectedValues() {
+                var values = [];
+                for (var i = 0; i < select.options.length; i++) {
+                    if (select.options[i].selected) {
+                        values.push(select.options[i].value);
+                    }
+                }
+                return values;
+            }
+
+            function renderSelected() {
+                selectedBox.innerHTML = "";
+                var hasSelected = false;
+
+                for (var i = 0; i < select.options.length; i++) {
+                    var option = select.options[i];
+                    if (!option.selected) {
+                        continue;
+                    }
+
+                    hasSelected = true;
+                    var chip = document.createElement("span");
+                    chip.className = "course-chip";
+                    chip.textContent = option.text;
+
+                    var removeBtn = document.createElement("button");
+                    removeBtn.type = "button";
+                    removeBtn.className = "chip-remove";
+                    removeBtn.textContent = "x";
+                    removeBtn.setAttribute("data-value", option.value);
+                    removeBtn.addEventListener("click", function (event) {
+                        var val = event.target.getAttribute("data-value");
+                        for (var j = 0; j < select.options.length; j++) {
+                            if (select.options[j].value === val) {
+                                select.options[j].selected = false;
+                                break;
+                            }
+                        }
+                        renderSelected();
+                        renderSuggestions(searchInput.value.trim().toLowerCase());
+                    });
+
+                    chip.appendChild(removeBtn);
+                    selectedBox.appendChild(chip);
+                }
+
+                if (!hasSelected) {
+                    var empty = document.createElement("span");
+                    empty.className = "no-courses";
+                    empty.textContent = "No courses selected yet.";
+                    selectedBox.appendChild(empty);
+                }
+            }
+
+            function renderSuggestions(query) {
+                suggestionsBox.innerHTML = "";
+                if (!query) {
+                    return;
+                }
+
+                var selectedValues = getSelectedValues();
+                var matchCount = 0;
+
+                for (var i = 0; i < select.options.length; i++) {
+                    var option = select.options[i];
+                    var text = option.text.toLowerCase();
+                    var alreadySelected = selectedValues.indexOf(option.value) !== -1;
+
+                    if (alreadySelected || text.indexOf(query) === -1) {
+                        continue;
+                    }
+
+                    matchCount += 1;
+                    var suggestion = document.createElement("button");
+                    suggestion.type = "button";
+                    suggestion.className = "course-suggestion-item";
+                    suggestion.textContent = option.text;
+                    suggestion.setAttribute("data-value", option.value);
+                    suggestion.addEventListener("click", function (event) {
+                        var val = event.target.getAttribute("data-value");
+                        for (var j = 0; j < select.options.length; j++) {
+                            if (select.options[j].value === val) {
+                                select.options[j].selected = true;
+                                break;
+                            }
+                        }
+                        searchInput.value = "";
+                        suggestionsBox.innerHTML = "";
+                        renderSelected();
+                        searchInput.focus();
+                    });
+                    suggestionsBox.appendChild(suggestion);
+                }
+
+                if (matchCount === 0) {
+                    var noMatch = document.createElement("div");
+                    noMatch.className = "no-courses";
+                    noMatch.textContent = "No matching courses.";
+                    suggestionsBox.appendChild(noMatch);
+                }
+            }
+
+            searchInput.addEventListener("input", function () {
+                renderSuggestions(searchInput.value.trim().toLowerCase());
+            });
+
+            renderSelected();
+        })();
+    </script>
+{% endblock %}

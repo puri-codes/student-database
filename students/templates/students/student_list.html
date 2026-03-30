@@ -1,0 +1,179 @@
+{% extends "students/base.html" %}
+
+{% block title %}Students{% endblock %}
+
+{% block content %}
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <h2 style="margin:0; font-family: Georgia, 'Palatino Linotype', serif;">Students</h2>
+        <a class="btn btn-primary" href="{% url 'students_web:student-create' %}">+ Add Student</a>
+    </div>
+
+    <form method="get" style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+        <div class="form-row" style="min-width:220px;">
+            <label for="faculty">Faculty</label>
+            <select name="faculty" id="faculty">
+                <option value="">All Faculties</option>
+                {% for value, label in faculty_choices %}
+                    <option value="{{ value }}" {% if active_faculty == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-row" style="min-width:220px;">
+            <label for="academic_year">Academic Year</label>
+            <select name="academic_year" id="academic_year">
+                <option value="">All Years</option>
+                {% for value, label in year_choices %}
+                    <option value="{{ value }}" {% if active_year == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-ghost">Apply Filters</button>
+        <a href="{% url 'students_web:student-list' %}" class="btn btn-ghost">Reset</a>
+    </form>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Guardian Name</th>
+                    <th>Phone</th>
+                    <th>Guardian</th>
+                    <th>Emergency</th>
+                    <th>Email</th>
+                    <th>Faculty</th>
+                    <th>Year</th>
+                    <th>Courses</th>
+                    <th>ID Number</th>
+                    <th>Enrollment Year</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                    <tr>
+                        <td>
+                            {% if student.profile_image %}
+                                <img class="avatar" src="{{ student.profile_image.url }}" alt="{{ student.full_name }}" />
+                            {% else %}
+                                <span style="color: var(--muted);">No image</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ student.full_name }}</td>
+                        <td>{{ student.guardian_name }}</td>
+                        <td>{{ student.phone_number }}</td>
+                        <td>{{ student.guardian_phone_number }}</td>
+                        <td>{{ student.emergency_contact_number }}</td>
+                        <td>{{ student.email }}</td>
+                        <td>{{ student.get_faculty_display }}</td>
+                        <td>{{ student.get_academic_year_display }}</td>
+                        <td>
+                            {% for course in student.courses.all %}
+                                <span style="display:block;">{{ course.code }}</span>
+                            {% empty %}
+                                <span style="color: var(--muted);">None</span>
+                            {% endfor %}
+                        </td>
+                        <td>{{ student.student_id_number }}</td>
+                        <td>{{ student.year_of_enrollment }}</td>
+                        <td>
+                            <div class="actions">
+                                <a class="btn btn-ghost" href="{% url 'students_web:student-update' student.pk %}">Edit</a>
+                                <form method="post" action="{% url 'students_web:student-delete' student.pk %}" onsubmit="return confirm('Delete this student?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="13" style="text-align:center; color: var(--muted);">No students found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="margin-top: 26px; border-top: 1px solid #e7e5e4; padding-top: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+            <h2 style="margin:0; font-family: Georgia, 'Palatino Linotype', serif;">Courses</h2>
+            <button type="button" class="btn btn-primary" id="toggle-course-form">+ Add Course</button>
+        </div>
+
+        <form method="post" action="{% url 'students_web:course-create' %}" id="course-form-box" style="margin-top:14px; padding:14px; border:1px solid #e7e5e4; border-radius:10px; {% if not show_course_form %}display:none;{% endif %}">
+            {% csrf_token %}
+            <div class="grid">
+                <div class="form-row">
+                    <label for="{{ course_form.faculty.id_for_label }}">Faculty</label>
+                    {{ course_form.faculty }}
+                    {{ course_form.faculty.errors }}
+                </div>
+                <div class="form-row">
+                    <label for="{{ course_form.code.id_for_label }}">Course Code</label>
+                    {{ course_form.code }}
+                    {{ course_form.code.errors }}
+                </div>
+                <div class="form-row">
+                    <label for="{{ course_form.name.id_for_label }}">Course Name</label>
+                    {{ course_form.name }}
+                    {{ course_form.name.errors }}
+                </div>
+                <div class="form-row">
+                    <label for="{{ course_form.description.id_for_label }}">Description</label>
+                    {{ course_form.description }}
+                    {{ course_form.description.errors }}
+                </div>
+            </div>
+
+            <div style="margin-top:12px;">
+                <button type="submit" class="btn btn-primary">Save Course</button>
+            </div>
+        </form>
+
+        <div class="table-wrap" style="margin-top:16px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Faculty</th>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course in courses %}
+                        <tr>
+                            <td>{{ course.get_faculty_display }}</td>
+                            <td>{{ course.code }}</td>
+                            <td>{{ course.name }}</td>
+                            <td>{{ course.description|default:"-" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" style="text-align:center; color: var(--muted);">No courses available.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var toggleButton = document.getElementById("toggle-course-form");
+            var formBox = document.getElementById("course-form-box");
+            if (!toggleButton || !formBox) {
+                return;
+            }
+
+            toggleButton.addEventListener("click", function () {
+                var isHidden = formBox.style.display === "none" || !formBox.style.display;
+                formBox.style.display = isHidden ? "block" : "none";
+            });
+        })();
+    </script>
+{% endblock %}
