@@ -5,10 +5,25 @@
 {% block content %}
     <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
         <h2 style="margin:0; font-family: Georgia, 'Palatino Linotype', serif;">Students</h2>
-        <a class="btn btn-primary" href="{% url 'students_web:student-create' %}">+ Add Student</a>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <a class="btn btn-primary" href="{% url 'students_web:student-create' %}">+ Add Student</a>
+            <button type="button" class="btn btn-ghost" id="toggle-courses-section">Show Courses</button>
+            <button type="button" class="btn btn-primary" id="open-course-form">+ Add Course</button>
+        </div>
     </div>
 
     <form method="get" style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+        <div class="form-row" style="min-width:260px; flex:1;">
+            <label for="q">Search Students</label>
+            <input
+                type="text"
+                id="q"
+                name="q"
+                value="{{ active_query }}"
+                placeholder="Search by name, ID, email, phone, guardian, emergency, faculty, course..."
+            />
+        </div>
+
         <div class="form-row" style="min-width:220px;">
             <label for="faculty">Faculty</label>
             <select name="faculty" id="faculty">
@@ -32,6 +47,8 @@
         <button type="submit" class="btn btn-ghost">Apply Filters</button>
         <a href="{% url 'students_web:student-list' %}" class="btn btn-ghost">Reset</a>
     </form>
+
+    <div id="cell-viewer" class="cell-viewer">Click any table cell to view its full content here.</div>
 
     <div class="table-wrap">
         <table>
@@ -98,10 +115,9 @@
         </table>
     </div>
 
-    <div style="margin-top: 26px; border-top: 1px solid #e7e5e4; padding-top: 20px;">
+    <div id="courses-section" style="margin-top: 26px; border-top: 1px solid #e7e5e4; padding-top: 20px; {% if not show_course_form %}display:none;{% endif %}">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
             <h2 style="margin:0; font-family: Georgia, 'Palatino Linotype', serif;">Courses</h2>
-            <button type="button" class="btn btn-primary" id="toggle-course-form">+ Add Course</button>
         </div>
 
         <form method="post" action="{% url 'students_web:course-create' %}" id="course-form-box" style="margin-top:14px; padding:14px; border:1px solid #e7e5e4; border-radius:10px; {% if not show_course_form %}display:none;{% endif %}">
@@ -164,16 +180,60 @@
 
     <script>
         (function () {
-            var toggleButton = document.getElementById("toggle-course-form");
+            var toggleSectionButton = document.getElementById("toggle-courses-section");
+            var openCourseFormButton = document.getElementById("open-course-form");
+            var coursesSection = document.getElementById("courses-section");
             var formBox = document.getElementById("course-form-box");
-            if (!toggleButton || !formBox) {
-                return;
+            var cellViewer = document.getElementById("cell-viewer");
+
+            function isVisible(element) {
+                return element && element.style.display !== "none";
             }
 
-            toggleButton.addEventListener("click", function () {
-                var isHidden = formBox.style.display === "none" || !formBox.style.display;
-                formBox.style.display = isHidden ? "block" : "none";
-            });
+            if (toggleSectionButton && coursesSection) {
+                toggleSectionButton.addEventListener("click", function () {
+                    var visible = isVisible(coursesSection);
+                    coursesSection.style.display = visible ? "none" : "block";
+                    toggleSectionButton.textContent = visible ? "Show Courses" : "Hide Courses";
+                });
+            }
+
+            if (openCourseFormButton && coursesSection && formBox) {
+                openCourseFormButton.addEventListener("click", function () {
+                    coursesSection.style.display = "block";
+                    formBox.style.display = "block";
+                    if (toggleSectionButton) {
+                        toggleSectionButton.textContent = "Hide Courses";
+                    }
+                    var firstInput = formBox.querySelector("input, select, textarea");
+                    if (firstInput) {
+                        firstInput.focus();
+                    }
+                });
+            }
+
+            if (cellViewer) {
+                var cells = document.querySelectorAll("table td, table th");
+                for (var i = 0; i < cells.length; i++) {
+                    cells[i].addEventListener("click", function () {
+                        var text = this.innerText.replace(/\s+/g, " ").trim();
+                        if (!text) {
+                            text = "(empty cell)";
+                        }
+
+                        for (var j = 0; j < cells.length; j++) {
+                            cells[j].classList.remove("active-cell");
+                        }
+                        this.classList.add("active-cell");
+                        this.title = text;
+                        cellViewer.textContent = text;
+                    });
+                }
+            }
+
+            if (!formBox) {
+                return;
+            }
         })();
     </script>
 {% endblock %}

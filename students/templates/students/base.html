@@ -6,14 +6,14 @@
     <title>{% block title %}Student Manager{% endblock %}</title>
     <style>
         :root {
-            --ink: #112233;
-            --bg: #f4efe7;
-            --paper: #fffaf2;
-            --accent: #0d9488;
-            --accent-dark: #0f766e;
-            --danger: #c53030;
+            --ink: #1f2937;
+            --bg: #f3f4f6;
+            --paper: #ffffff;
+            --accent: #0ea5e9;
+            --accent-dark: #0284c7;
+            --danger: #dc2626;
             --muted: #6b7280;
-            --border: #d6d3d1;
+            --border: #d1d5db;
         }
 
         * { box-sizing: border-box; }
@@ -22,30 +22,29 @@
             margin: 0;
             font-family: "Trebuchet MS", "Lucida Sans Unicode", "Segoe UI", sans-serif;
             color: var(--ink);
-            background:
-                radial-gradient(circle at 10% 0%, #fef3c7 0%, transparent 40%),
-                radial-gradient(circle at 90% 20%, #ccfbf1 0%, transparent 40%),
-                var(--bg);
-            min-height: 100vh;
+            background: var(--bg);
+            min-height: 100dvh;
         }
 
         .container {
-            width: min(1100px, 95vw);
-            margin: 28px auto;
+            width: 100vw;
+            min-height: 100dvh;
+            margin: 0;
             background: var(--paper);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            box-shadow: 0 12px 30px rgba(17, 34, 51, 0.08);
-            overflow: hidden;
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+            overflow: visible;
         }
 
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 22px;
-            background: linear-gradient(120deg, #0d9488, #14b8a6);
-            color: #f0fdfa;
+            padding: 10px 16px;
+            background: #1f2937;
+            color: #f9fafb;
+            border-bottom: 1px solid #111827;
         }
 
         .header h1 {
@@ -62,7 +61,7 @@
         }
 
         .content {
-            padding: 22px;
+            padding: 10px 12px;
         }
 
         .messages {
@@ -125,16 +124,36 @@
             border-collapse: collapse;
             margin-top: 14px;
             background: #fff;
+            table-layout: fixed;
         }
 
         th, td {
             text-align: left;
-            padding: 10px;
-            border-bottom: 1px solid #e7e5e4;
+            padding: 8px;
+            border: 1px solid var(--border);
             vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        th { background: #f5f5f4; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.3px; }
+        th {
+            background: #f3f4f6;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #fcfcfd;
+        }
+
+        tbody tr:hover {
+            background: #f0f9ff;
+        }
 
         .avatar {
             width: 44px;
@@ -146,8 +165,23 @@
 
         .actions {
             display: flex;
-            gap: 8px;
-            align-items: center;
+            flex-direction: column;
+            gap: 6px;
+            align-items: stretch;
+            width: 100%;
+        }
+
+        .actions a,
+        .actions button,
+        .actions form {
+            width: 100%;
+        }
+
+        .actions .btn {
+            padding: 6px 8px;
+            font-size: 0.8rem;
+            text-align: center;
+            display: block;
         }
 
         .errorlist {
@@ -210,6 +244,24 @@
             font-size: 0.9rem;
         }
 
+        .cell-viewer {
+            margin-top: 10px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            background: #f8fafc;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+        }
+
+        .active-cell {
+            outline: 2px solid #0284c7;
+            outline-offset: -2px;
+            background: #e0f2fe !important;
+        }
+
         option[hidden] {
             display: none;
         }
@@ -217,6 +269,7 @@
         @media (max-width: 900px) {
             .grid { grid-template-columns: 1fr; }
             .header { flex-direction: column; gap: 8px; align-items: flex-start; }
+            th, td { white-space: normal; }
         }
     </style>
 </head>

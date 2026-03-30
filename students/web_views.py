@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import CourseForm, StudentForm
@@ -11,6 +12,7 @@ from .models import Course, Student
 def student_list(request):
     faculty = request.GET.get("faculty")
     academic_year = request.GET.get("academic_year")
+    query = request.GET.get("q", "").strip()
 
     students = Student.objects.all().prefetch_related("courses")
     courses = Course.objects.all().order_by("faculty", "code")
@@ -18,6 +20,24 @@ def student_list(request):
         students = students.filter(faculty=faculty)
     if academic_year:
         students = students.filter(academic_year=academic_year)
+    if query:
+        filters = (
+            Q(full_name__icontains=query)
+            | Q(guardian_name__icontains=query)
+            | Q(phone_number__icontains=query)
+            | Q(guardian_phone_number__icontains=query)
+            | Q(emergency_contact_number__icontains=query)
+            | Q(email__icontains=query)
+            | Q(student_id_number__icontains=query)
+            | Q(faculty__icontains=query)
+            | Q(academic_year__icontains=query)
+            | Q(courses__code__icontains=query)
+            | Q(courses__name__icontains=query)
+            | Q(courses__faculty__icontains=query)
+        )
+        if query.isdigit():
+            filters = filters | Q(year_of_enrollment=int(query))
+        students = students.filter(filters).distinct()
 
     context = {
         "students": students,
@@ -27,6 +47,8 @@ def student_list(request):
         "year_choices": Student.AcademicYearChoices.choices,
         "active_faculty": faculty,
         "active_year": academic_year,
+        "active_query": query,
+        "show_course_form": False,
     }
     return render(request, "students/student_list.html", context)
 
@@ -109,6 +131,7 @@ def course_create(request):
         "year_choices": Student.AcademicYearChoices.choices,
         "active_faculty": "",
         "active_year": "",
+        "active_query": "",
         "show_course_form": True,
     }
     return render(request, "students/student_list.html", context)
